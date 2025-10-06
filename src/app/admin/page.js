@@ -1,47 +1,53 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "../../lib/Supabase";
+import { supabase } from "../../lib/Supabase"; // make sure this path is correct
 
 export default function AdminPage() {
-  const [mode, setMode] = useState("posts");
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [password, setPassword] = useState("");
+
+  const [mode, setMode] = useState("posts"); // "posts" or "events"
+
+  // Post fields
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [content, setContent] = useState("");
   const [image, setImage] = useState("");
+
+  // Event fields
+  const [eventTitle, setEventTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [link, setLink] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState("");
 
-  const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
+  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "1234";
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (password === adminPassword) {
-      setIsAuthenticated(true);
-      localStorage.setItem("adminLoggedIn", "true");
+    if (password === ADMIN_PASSWORD) {
+      setLoggedIn(true);
     } else {
       alert("❌ Incorrect password!");
     }
   };
 
-  // Persist session (so you don’t log in every refresh)
-  if (typeof window !== "undefined" && localStorage.getItem("adminLoggedIn") === "true" && !isAuthenticated) {
-    setIsAuthenticated(true);
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (mode === "posts") {
-      const { data, error } = await supabase
-        .from("posts")
-        .insert([{ title, summary, content, image }]);
+      if (!title || !summary || !content || !image) {
+        alert("❌ Please fill all post fields");
+        return;
+      }
+
+      const { data, error } = await supabase.from("posts").insert([
+        { title, summary, content, image },
+      ]);
 
       if (error) {
         console.error("Supabase insert error:", error);
-        alert("❌ Failed to add post");
+        alert("❌ Failed to add post — check console for details.");
       } else {
         alert("✅ Post added successfully!");
         setTitle("");
@@ -49,43 +55,43 @@ export default function AdminPage() {
         setContent("");
         setImage("");
       }
-    } else if (mode === "events") {
-      const { data, error } = await supabase
-        .from("events")
-        .insert([{ title, date, link, summary }]);
+    } else {
+      // events
+      if (!eventTitle || !description || !date || !link) {
+        alert("❌ Please fill all event fields");
+        return;
+      }
+
+      const { data, error } = await supabase.from("events").insert([
+        { title: eventTitle, description, date, link },
+      ]);
 
       if (error) {
         console.error("Supabase insert error:", error);
-        alert("❌ Failed to add event");
+        alert("❌ Failed to add event — check console for details.");
       } else {
         alert("✅ Event added successfully!");
-        setTitle("");
+        setEventTitle("");
+        setDescription("");
         setDate("");
         setLink("");
-        setSummary("");
       }
     }
   };
 
-  if (!isAuthenticated) {
+  if (!loggedIn) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-orange-100 to-yellow-200">
-        <form
-          onSubmit={handleLogin}
-          className="bg-white p-8 rounded-2xl shadow-lg w-96 text-center"
-        >
-          <h2 className="text-2xl font-bold mb-6 text-gray-800">Admin Login</h2>
+      <div className="p-8 flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-3xl font-bold mb-4">Admin Login</h1>
+        <form onSubmit={handleLogin} className="flex flex-col gap-2 w-64">
           <input
             type="password"
-            placeholder="Enter Admin Password"
+            placeholder="Enter password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            className="p-2 border rounded"
           />
-          <button
-            type="submit"
-            className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition"
-          >
+          <button type="submit" className="bg-blue-600 text-white p-2 rounded">
             Login
           </button>
         </form>
@@ -94,96 +100,92 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="p-8 bg-gradient-to-br from-orange-50 to-yellow-100 min-h-screen">
-      <h1 className="text-4xl font-bold text-center mb-8 text-orange-700">Admin Dashboard</h1>
+    <div className="p-8 max-w-2xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Admin Portal</h1>
 
-      <div className="flex justify-center mb-6">
+      <div className="mb-6">
         <button
+          className={`p-2 mr-2 rounded ${
+            mode === "posts" ? "bg-blue-600 text-white" : "bg-gray-200"
+          }`}
           onClick={() => setMode("posts")}
-          className={`px-4 py-2 rounded-l-lg ${mode === "posts" ? "bg-orange-600 text-white" : "bg-white text-orange-600 border"}`}
         >
           Add Post
         </button>
         <button
+          className={`p-2 rounded ${
+            mode === "events" ? "bg-green-600 text-white" : "bg-gray-200"
+          }`}
           onClick={() => setMode("events")}
-          className={`px-4 py-2 rounded-r-lg ${mode === "events" ? "bg-orange-600 text-white" : "bg-white text-orange-600 border"}`}
         >
           Add Event
         </button>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="max-w-lg mx-auto bg-white p-6 rounded-xl shadow-md"
-      >
-        <input
-          type="text"
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full p-2 border rounded mb-3"
-          required
-        />
-
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {mode === "posts" ? (
           <>
+            <input
+              type="text"
+              placeholder="Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="p-2 border rounded"
+            />
             <input
               type="text"
               placeholder="Summary"
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
-              className="w-full p-2 border rounded mb-3"
-              required
+              className="p-2 border rounded"
             />
             <textarea
               placeholder="Content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="w-full p-2 border rounded mb-3"
-              rows="5"
-              required
+              className="p-2 border rounded"
             />
             <input
               type="text"
               placeholder="Image URL"
               value={image}
               onChange={(e) => setImage(e.target.value)}
-              className="w-full p-2 border rounded mb-3"
+              className="p-2 border rounded"
             />
           </>
         ) : (
           <>
             <input
               type="text"
-              placeholder="Date (e.g. 2025-10-15)"
+              placeholder="Event Title"
+              value={eventTitle}
+              onChange={(e) => setEventTitle(e.target.value)}
+              className="p-2 border rounded"
+            />
+            <textarea
+              placeholder="Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="p-2 border rounded"
+            />
+            <input
+              type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full p-2 border rounded mb-3"
-              required
+              className="p-2 border rounded"
             />
             <input
               type="text"
-              placeholder="Link"
+              placeholder="Event Link"
               value={link}
               onChange={(e) => setLink(e.target.value)}
-              className="w-full p-2 border rounded mb-3"
-            />
-            <textarea
-              placeholder="Event Description"
-              value={summary}
-              onChange={(e) => setSummary(e.target.value)}
-              className="w-full p-2 border rounded mb-3"
-              rows="4"
-              required
+              className="p-2 border rounded"
             />
           </>
         )}
 
-        <button
-          type="submit"
-          className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition"
-        >
-          {mode === "posts" ? "Add Post" : "Add Event"}
+        <button type="submit" className="bg-blue-600 text-white p-2 rounded">
+          Add {mode === "posts" ? "Post" : "Event"}
         </button>
       </form>
     </div>
