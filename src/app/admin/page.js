@@ -5,153 +5,187 @@ import { supabase } from "../../lib/Supabase";
 
 export default function AdminPage() {
   const [mode, setMode] = useState("posts");
-  const [form, setForm] = useState({
-    title: "",
-    summary: "",
-    content: "",
-    image: "",
-    date: "",
-    description: "",
-  });
+  const [title, setTitle] = useState("");
+  const [summary, setSummary] = useState("");
+  const [content, setContent] = useState("");
+  const [image, setImage] = useState("");
+  const [date, setDate] = useState("");
+  const [link, setLink] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
-  const handleSubmit = async (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
-    const table = mode === "posts" ? "posts" : "events";
-
-    const dataToInsert =
-      mode === "posts"
-        ? {
-            title: form.title,
-            summary: form.summary,
-            content: form.content,
-            image: form.image,
-          }
-        : {
-            title: form.title,
-            description: form.description,
-            date: form.date,
-            image: form.image,
-          };
-
-    const { data, error } = await supabase.from(table).insert([dataToInsert]);
-
-    if (error) {
-      console.error("Supabase insert error:", error);
-      alert("❌ Failed to add item — check console for details.");
+    if (password === adminPassword) {
+      setIsAuthenticated(true);
+      localStorage.setItem("adminLoggedIn", "true");
     } else {
-      console.log("✅ Inserted:", data);
-      alert(`✅ ${mode === "posts" ? "Post" : "Event"} added successfully!`);
-      setForm({
-        title: "",
-        summary: "",
-        content: "",
-        image: "",
-        date: "",
-        description: "",
-      });
+      alert("❌ Incorrect password!");
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-r from-pink-100 via-purple-100 to-indigo-100 p-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl p-8">
-        <h1 className="text-3xl font-bold text-center text-indigo-700 mb-6">
-          Admin Dashboard
-        </h1>
+  // Persist session (so you don’t log in every refresh)
+  if (typeof window !== "undefined" && localStorage.getItem("adminLoggedIn") === "true" && !isAuthenticated) {
+    setIsAuthenticated(true);
+  }
 
-        <div className="flex justify-center mb-6 gap-4">
-          <button
-            className={`px-6 py-2 rounded-lg font-semibold ${
-              mode === "posts"
-                ? "bg-indigo-600 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
-            onClick={() => setMode("posts")}
-          >
-            Manage Posts
-          </button>
-          <button
-            className={`px-6 py-2 rounded-lg font-semibold ${
-              mode === "events"
-                ? "bg-indigo-600 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
-            onClick={() => setMode("events")}
-          >
-            Manage Events
-          </button>
-        </div>
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Common Fields */}
+    if (mode === "posts") {
+      const { data, error } = await supabase
+        .from("posts")
+        .insert([{ title, summary, content, image }]);
+
+      if (error) {
+        console.error("Supabase insert error:", error);
+        alert("❌ Failed to add post");
+      } else {
+        alert("✅ Post added successfully!");
+        setTitle("");
+        setSummary("");
+        setContent("");
+        setImage("");
+      }
+    } else if (mode === "events") {
+      const { data, error } = await supabase
+        .from("events")
+        .insert([{ title, date, link, summary }]);
+
+      if (error) {
+        console.error("Supabase insert error:", error);
+        alert("❌ Failed to add event");
+      } else {
+        alert("✅ Event added successfully!");
+        setTitle("");
+        setDate("");
+        setLink("");
+        setSummary("");
+      }
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-orange-100 to-yellow-200">
+        <form
+          onSubmit={handleLogin}
+          className="bg-white p-8 rounded-2xl shadow-lg w-96 text-center"
+        >
+          <h2 className="text-2xl font-bold mb-6 text-gray-800">Admin Login</h2>
           <input
-            name="title"
-            placeholder="Title"
-            value={form.title}
-            onChange={handleChange}
-            required
-            className="w-full p-3 border rounded-lg"
+            type="password"
+            placeholder="Enter Admin Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-orange-400"
           />
-          <input
-            name="image"
-            placeholder="Image URL"
-            value={form.image}
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg"
-          />
-
-          {mode === "posts" ? (
-            <>
-              <input
-                name="summary"
-                placeholder="Short Summary"
-                value={form.summary}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border rounded-lg"
-              />
-              <textarea
-                name="content"
-                placeholder="Full Content"
-                value={form.content}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border rounded-lg h-40"
-              />
-            </>
-          ) : (
-            <>
-              <input
-                type="date"
-                name="date"
-                value={form.date}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border rounded-lg"
-              />
-              <textarea
-                name="description"
-                placeholder="Event Description"
-                value={form.description}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border rounded-lg h-40"
-              />
-            </>
-          )}
-
           <button
             type="submit"
-            className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-all"
+            className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition"
           >
-            Add {mode === "posts" ? "Post" : "Event"}
+            Login
           </button>
         </form>
       </div>
+    );
+  }
+
+  return (
+    <div className="p-8 bg-gradient-to-br from-orange-50 to-yellow-100 min-h-screen">
+      <h1 className="text-4xl font-bold text-center mb-8 text-orange-700">Admin Dashboard</h1>
+
+      <div className="flex justify-center mb-6">
+        <button
+          onClick={() => setMode("posts")}
+          className={`px-4 py-2 rounded-l-lg ${mode === "posts" ? "bg-orange-600 text-white" : "bg-white text-orange-600 border"}`}
+        >
+          Add Post
+        </button>
+        <button
+          onClick={() => setMode("events")}
+          className={`px-4 py-2 rounded-r-lg ${mode === "events" ? "bg-orange-600 text-white" : "bg-white text-orange-600 border"}`}
+        >
+          Add Event
+        </button>
+      </div>
+
+      <form
+        onSubmit={handleSubmit}
+        className="max-w-lg mx-auto bg-white p-6 rounded-xl shadow-md"
+      >
+        <input
+          type="text"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full p-2 border rounded mb-3"
+          required
+        />
+
+        {mode === "posts" ? (
+          <>
+            <input
+              type="text"
+              placeholder="Summary"
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              className="w-full p-2 border rounded mb-3"
+              required
+            />
+            <textarea
+              placeholder="Content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full p-2 border rounded mb-3"
+              rows="5"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Image URL"
+              value={image}
+              onChange={(e) => setImage(e.target.value)}
+              className="w-full p-2 border rounded mb-3"
+            />
+          </>
+        ) : (
+          <>
+            <input
+              type="text"
+              placeholder="Date (e.g. 2025-10-15)"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full p-2 border rounded mb-3"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Link"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              className="w-full p-2 border rounded mb-3"
+            />
+            <textarea
+              placeholder="Event Description"
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              className="w-full p-2 border rounded mb-3"
+              rows="4"
+              required
+            />
+          </>
+        )}
+
+        <button
+          type="submit"
+          className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition"
+        >
+          {mode === "posts" ? "Add Post" : "Add Event"}
+        </button>
+      </form>
     </div>
   );
 }
