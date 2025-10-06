@@ -42,6 +42,8 @@ export default function HomePage() {
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-indigo-100 text-gray-800 px-4 py-8">
       {/* 🌟 Header */}
       <header className="text-center mb-10">
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3497119242149361"
+     crossorigin="anonymous"></script>
         <h1 className="text-4xl md:text-5xl font-extrabold text-indigo-700 mb-3 drop-shadow">
           🎓 Coastal Vibes Portal
         </h1>
