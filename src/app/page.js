@@ -43,7 +43,8 @@ export default function HomePage() {
       {/* 🌟 Header */}
       <header className="text-center mb-10">
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3497119242149361"
-     crossorigin="anonymous"></script>
+     crossOrigin="anonymous"
+></script>
         <h1 className="text-4xl md:text-5xl font-extrabold text-indigo-700 mb-3 drop-shadow">
           🎓 Coastal Vibes Portal
         </h1>
