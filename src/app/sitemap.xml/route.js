@@ -1,21 +1,20 @@
+import posts from "@/data/posts.json";
+
 export async function GET() {
-  const baseUrl = "https://swahili-vibez-blog.vercel.app"; // your site URL
+  const baseUrl = "https://swahili-vibez-blog.vercel.app";
 
-  const posts = [
-    { slug: "first-post", updatedAt: "2025-11-01" },
-    { slug: "second-post", updatedAt: "2025-11-05" },
-  ];
-
+  // Generate URL entries dynamically
   const urls = posts
-    .map(
-      (post) => `
-    <url>
-      <loc>${baseUrl}/blog/${post.slug}</loc>
-      <lastmod>${new Date(post.updatedAt).toISOString()}</lastmod>
-      <changefreq>weekly</changefreq>
-      <priority>0.7</priority>
-    </url>`
-    )
+    .map((post) => {
+      return `
+        <url>
+          <loc>${baseUrl}/blogs/${post.id}</loc>
+          <lastmod>${new Date(post.updatedAt).toISOString()}</lastmod>
+          <changefreq>weekly</changefreq>
+          <priority>0.7</priority>
+        </url>
+      `;
+    })
     .join("");
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -32,3 +31,4 @@ export async function GET() {
     headers: { "Content-Type": "application/xml" },
   });
 }
+
